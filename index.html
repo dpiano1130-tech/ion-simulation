@@ -30,8 +30,6 @@ button, select, input {
 #powerBtn.off { background:#ddd; }
 
 svg { max-width:360px; display:block; margin:auto; }
-
-.hidden { display:none; }
 </style>
 </head>
 
@@ -58,51 +56,60 @@ svg { max-width:360px; display:block; margin:auto; }
     粒子数
     <input type="range" id="particleSlider" min="0" max="20" value="10">
   </label>
-
-  <button id="electrodeBtn">表示：＋ / −</button>
 </div>
 
 <!-- ===== 回路＋ビーカー ===== -->
-<svg viewBox="0 0 400 500">
+<svg viewBox="0 0 400 520">
 
 <!-- 電池 -->
-<line x1="50" y1="50" x2="50" y2="90" stroke="black" stroke-width="3"/>
-<line x1="65" y1="40" x2="65" y2="100" stroke="black" stroke-width="5"/>
-<text x="40" y="35">電池</text>
+<line x1="50" y1="40" x2="50" y2="90" stroke="black" stroke-width="3"/>
+<line x1="65" y1="30" x2="65" y2="100" stroke="black" stroke-width="5"/>
+<text x="40" y="20">電池</text>
 
-<!-- 導線 -->
-<path d="M65 70 H180" stroke="black" fill="none"/>
+<!-- 導線（閉回路） -->
+<path d="
+M65 65
+H200
+V120
+H140
+V200
+" stroke="black" fill="none"/>
+
+<path d="
+M260 200
+V120
+H350
+V65
+H50
+" stroke="black" fill="none"/>
 
 <!-- 豆電球 -->
-<circle id="bulbGlass" cx="230" cy="70" r="25"
+<circle id="bulbGlass" cx="200" cy="65" r="20"
         fill="yellow" opacity="0.2"/>
-<line x1="215" y1="80" x2="245" y2="80"
+<line x1="190" y1="75" x2="210" y2="75"
       stroke="orange" stroke-width="4"/>
-<text x="210" y="30">豆電球</text>
+<text x="170" y="30">豆電球</text>
 
-<path d="M255 70 H350 V140" stroke="black" fill="none"/>
+<!-- 電極（溶液中まで挿入） -->
+<line x1="140" y1="200" x2="140" y2="300" stroke="black" stroke-width="4"/>
+<line x1="260" y1="200" x2="260" y2="300" stroke="black" stroke-width="4"/>
 
-<!-- 電極 -->
-<line x1="140" y1="140" x2="140" y2="200" stroke="black" stroke-width="3"/>
-<line x1="260" y1="140" x2="260" y2="200" stroke="black" stroke-width="3"/>
-
-<!-- ラベル -->
-<text id="leftLabel"  x="120" y="160" fill="red">＋</text>
-<text id="rightLabel" x="280" y="160" fill="blue">−</text>
+<text x="120" y="215" fill="red">＋</text>
+<text x="280" y="215" fill="blue">−</text>
 
 <!-- ビーカー -->
-<path d="M100 200 L300 200 L280 450 Q200 480 120 450 Z"
+<path d="M100 200 L300 200 L280 480 Q200 510 120 480 Z"
       fill="none" stroke="#333" stroke-width="4"/>
 
 <!-- 水 -->
 <path id="liquid"
-      d="M120 260 L280 260 L260 440 Q200 460 140 440 Z"
+      d="M120 260 L280 260 L260 470 Q200 490 140 470 Z"
       fill="#ccecff" opacity="0.7"/>
 
 <!-- 粒子 -->
 <g id="particles"></g>
 
-<!-- Cu析出 -->
+<!-- Cu析出（陰極表面） -->
 <g id="copperDeposit"></g>
 
 </svg>
@@ -115,12 +122,7 @@ const copperG = document.getElementById("copperDeposit");
 const liquid = document.getElementById("liquid");
 const slider = document.getElementById("particleSlider");
 
-const leftLabel  = document.getElementById("leftLabel");
-const rightLabel = document.getElementById("rightLabel");
-const electrodeBtn = document.getElementById("electrodeBtn");
-
 let powerOn=false;
-let labelMode="pm";
 
 powerBtn.onclick=()=>{
   powerOn=!powerOn;
@@ -129,24 +131,10 @@ powerBtn.onclick=()=>{
   draw();
 };
 
-electrodeBtn.onclick=()=>{
-  if(labelMode==="pm"){
-    labelMode="anode";
-    leftLabel.textContent="陽極";
-    rightLabel.textContent="陰極";
-    electrodeBtn.textContent="表示：陽極 / 陰極";
-  }else{
-    labelMode="pm";
-    leftLabel.textContent="＋";
-    rightLabel.textContent="−";
-    electrodeBtn.textContent="表示：＋ / −";
-  }
-};
-
 function conducts(){
-  const sub=substance.value;
-  const st=state.value;
-  return powerOn && st==="solution" && sub!=="sugar";
+  return powerOn &&
+    state.value==="solution" &&
+    substance.value!=="sugar";
 }
 
 function updateBulb(){
@@ -165,18 +153,12 @@ function draw(){
 
   for(let i=0;i<n;i++){
     const cx=150+Math.random()*100;
-    const cy=280+Math.random()*120;
+    const cy=300+Math.random()*120;
     const p=document.createElementNS("http://www.w3.org/2000/svg","circle");
     p.setAttribute("cx",cx);
     p.setAttribute("cy",cy);
     p.setAttribute("r",5);
-
-    let color="gray";
-    if(cond){
-      if(substance.value==="acid") color=i%2?"red":"blue";
-      else color=i%2?"red":"blue";
-    }
-    p.setAttribute("fill",color);
+    p.setAttribute("fill",cond?(i%2?"red":"blue"):"gray");
 
     if(cond){
       const dir=i%2?1:-1;
@@ -189,11 +171,12 @@ function draw(){
     particlesG.appendChild(p);
   }
 
+  // 塩化銅：陰極表面にCu析出
   if(cond && substance.value==="copper"){
-    for(let i=0;i<8;i++){
+    for(let i=0;i<10;i++){
       const cu=document.createElementNS("http://www.w3.org/2000/svg","circle");
-      cu.setAttribute("cx",250+Math.random()*10);
-      cu.setAttribute("cy",350+Math.random()*60);
+      cu.setAttribute("cx",260 + Math.random()*6);
+      cu.setAttribute("cy",330 + Math.random()*120);
       cu.setAttribute("r",4);
       cu.setAttribute("fill","#b87333");
       copperG.appendChild(cu);
