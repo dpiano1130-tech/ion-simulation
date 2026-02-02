@@ -81,10 +81,26 @@ svg { max-width:360px; display:block; margin:auto; }
 <line x1="65" y1="30" x2="65" y2="100" stroke="black" stroke-width="5"/>
 <text x="40" y="20">電池</text>
 
-<!-- 導線（直列） -->
+<!-- 導線（直列・電極に正確に接続） -->
+<!-- 電池 → 豆電球 -->
 <path d="M65 65 H180" stroke="black" fill="none"/>
-<path d="M220 65 H350 V200 H260 V300" stroke="black" fill="none"/>
-<path d="M140 300 V200 H50 V65" stroke="black" fill="none"/>
+
+<!-- 豆電球 → 右電極（上端に接続） -->
+<path d="
+M220 65
+H350
+V185
+H260
+V200
+" stroke="black" fill="none"/>
+
+<!-- 左電極 → 電池 -->
+<path d="
+M140 200
+V185
+H50
+V65
+" stroke="black" fill="none"/>
 
 <!-- 豆電球 -->
 <circle id="bulbGlass" cx="200" cy="65" r="20"
@@ -97,6 +113,11 @@ svg { max-width:360px; display:block; margin:auto; }
 <line x1="140" y1="200" x2="140" y2="300" stroke="black" stroke-width="4"/>
 <line x1="260" y1="200" x2="260" y2="300" stroke="black" stroke-width="4"/>
 
+<!-- 電極と導線の接続点（誤解防止） -->
+<circle cx="140" cy="200" r="3" fill="black"/>
+<circle cx="260" cy="200" r="3" fill="black"/>
+
+<!-- 電極ラベル -->
 <text id="labelLeft"  x="120" y="215" fill="red">＋</text>
 <text id="labelRight" x="280" y="215" fill="blue">−</text>
 
@@ -118,10 +139,10 @@ svg { max-width:360px; display:block; margin:auto; }
 
 <div id="explanation">
 <b>教材解説</b><br>
-・水溶液の中では、物質が粒子（イオン）として動くことで電流が流れる。<br>
+・水溶液では、物質が粒子（イオン）に分かれて動くことで電流が流れる。<br>
 ・砂糖やエタノールは粒子に分かれないため、電気を通さない。<br>
-・電流が流れると、電極では物質が変化し、金属の析出や気体の発生が起こる。<br>
-・粒子数を増やすと、電流が流れやすくなり、豆電球が明るくなる。
+・電流が流れると、電極では気体の発生や金属の析出が起こる。<br>
+・粒子数が多いほど、電流が流れやすくなり、豆電球は明るくなる。
 </div>
 
 <script>
@@ -136,7 +157,7 @@ const substance = document.getElementById("substance");
 const state = document.getElementById("state");
 
 let powerOn=false;
-let labelMode=0; // 0:+- 1:陽極陰極
+let labelMode=0;
 
 powerBtn.onclick=()=>{
   powerOn=!powerOn;
@@ -182,7 +203,6 @@ function draw(){
   }
 
   if(cond){
-    // 気泡（陽極）
     for(let i=0;i<5;i++){
       const b=document.createElementNS("http://www.w3.org/2000/svg","circle");
       b.setAttribute("cx",140+Math.random()*6);
