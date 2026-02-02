@@ -8,18 +8,11 @@
 <style>
 body {
   font-family: sans-serif;
-  margin: 0;
-  padding: 10px;
-  background: #f5f5f5;
+  background:#f5f5f5;
+  margin:0;
+  padding:10px;
 }
 h2 { text-align:center; }
-
-button, select, input {
-  font-size: 16px;
-  padding: 6px;
-}
-
-.hidden { display:none; }
 
 .controls {
   display:grid;
@@ -28,36 +21,29 @@ button, select, input {
   margin-bottom:10px;
 }
 
+button, select, input {
+  font-size:16px;
+  padding:6px;
+}
+
 #powerBtn.on { background:#ffcccc; }
 #powerBtn.off { background:#ddd; }
 
-svg { max-width:320px; }
+svg { max-width:360px; display:block; margin:auto; }
 
-#bulbGlass { fill:yellow; opacity:0.2; }
-
-.page {
-  max-width: 420px;
-  margin: auto;
-}
-
-.help {
-  background:white;
-  padding:15px;
-  border-radius:8px;
-}
+.hidden { display:none; }
 </style>
 </head>
 
 <body>
 
-<!-- ===== メイン教材ページ ===== -->
-<div id="mainPage" class="page">
-<h2>水溶液と電流</h2>
+<h2>水溶液と電流（模擬実験）</h2>
 
 <div class="controls">
   <select id="substance">
     <option value="sugar">砂糖</option>
     <option value="salt">食塩</option>
+    <option value="acid">塩酸</option>
     <option value="copper">塩化銅</option>
   </select>
 
@@ -76,53 +62,57 @@ svg { max-width:320px; }
   <button id="electrodeBtn">表示：＋ / −</button>
 </div>
 
+<!-- ===== 回路＋ビーカー ===== -->
+<svg viewBox="0 0 400 500">
+
+<!-- 電池 -->
+<line x1="50" y1="50" x2="50" y2="90" stroke="black" stroke-width="3"/>
+<line x1="65" y1="40" x2="65" y2="100" stroke="black" stroke-width="5"/>
+<text x="40" y="35">電池</text>
+
+<!-- 導線 -->
+<path d="M65 70 H180" stroke="black" fill="none"/>
+
 <!-- 豆電球 -->
-<svg width="100" viewBox="0 0 100 150">
-  <circle id="bulbGlass" cx="50" cy="50" r="35"/>
-  <line x1="40" y1="60" x2="60" y2="60"
-        stroke="orange" stroke-width="4"/>
-  <rect x="35" y="90" width="30" height="40" fill="#666"/>
-</svg>
+<circle id="bulbGlass" cx="230" cy="70" r="25"
+        fill="yellow" opacity="0.2"/>
+<line x1="215" y1="80" x2="245" y2="80"
+      stroke="orange" stroke-width="4"/>
+<text x="210" y="30">豆電球</text>
+
+<path d="M255 70 H350 V140" stroke="black" fill="none"/>
+
+<!-- 電極 -->
+<line x1="140" y1="140" x2="140" y2="200" stroke="black" stroke-width="3"/>
+<line x1="260" y1="140" x2="260" y2="200" stroke="black" stroke-width="3"/>
+
+<!-- ラベル -->
+<text id="leftLabel"  x="120" y="160" fill="red">＋</text>
+<text id="rightLabel" x="280" y="160" fill="blue">−</text>
 
 <!-- ビーカー -->
-<svg id="beaker" viewBox="0 0 200 300">
-  <!-- 電極ラベル -->
-  <text id="leftLabel"  x="40"  y="120" fill="red">＋</text>
-  <text id="rightLabel" x="150" y="120" fill="blue">−</text>
+<path d="M100 200 L300 200 L280 450 Q200 480 120 450 Z"
+      fill="none" stroke="#333" stroke-width="4"/>
 
-  <path d="M40 20 L160 20 L150 260 Q100 280 50 260 Z"
-        fill="none" stroke="#333" stroke-width="4"/>
+<!-- 水 -->
+<path id="liquid"
+      d="M120 260 L280 260 L260 440 Q200 460 140 440 Z"
+      fill="#ccecff" opacity="0.7"/>
 
-  <path d="M50 100 L150 100 L140 250 Q100 265 60 250 Z"
-        fill="#ccecff" opacity="0.7"/>
+<!-- 粒子 -->
+<g id="particles"></g>
 
-  <g id="particles"></g>
-  <g id="copperDeposit"></g>
+<!-- Cu析出 -->
+<g id="copperDeposit"></g>
+
 </svg>
-
-<button onclick="location.hash='help'">教材解説を見る</button>
-</div>
-
-<!-- ===== 解説ページ ===== -->
-<div id="helpPage" class="page hidden">
-<h2>教材解説（教員用）</h2>
-
-<div class="help">
-<ul>
-  <li>電極表示は「＋／−」と「陽極／陰極」を切り替え可能</li>
-  <li>中学では＋極・−極、高校では陽極・陰極として扱える</li>
-  <li>塩化銅水溶液では陰極でCuが析出する</li>
-</ul>
-</div>
-
-<button onclick="location.hash=''">戻る</button>
-</div>
 
 <script>
 const powerBtn = document.getElementById("powerBtn");
 const bulb = document.getElementById("bulbGlass");
 const particlesG = document.getElementById("particles");
 const copperG = document.getElementById("copperDeposit");
+const liquid = document.getElementById("liquid");
 const slider = document.getElementById("particleSlider");
 
 const leftLabel  = document.getElementById("leftLabel");
@@ -130,7 +120,7 @@ const rightLabel = document.getElementById("rightLabel");
 const electrodeBtn = document.getElementById("electrodeBtn");
 
 let powerOn=false;
-let labelMode="pm"; // pm or anode
+let labelMode="pm";
 
 powerBtn.onclick=()=>{
   powerOn=!powerOn;
@@ -154,48 +144,56 @@ electrodeBtn.onclick=()=>{
 };
 
 function conducts(){
-  return powerOn &&
-    state.value==="solution" &&
-    substance.value!=="sugar";
+  const sub=substance.value;
+  const st=state.value;
+  return powerOn && st==="solution" && sub!=="sugar";
 }
 
 function updateBulb(){
-  const on=conducts();
-  bulb.style.opacity=on?(0.3+slider.value/20*0.6):0.2;
+  bulb.style.opacity = conducts()
+    ? 0.3 + slider.value/20*0.6
+    : 0.2;
 }
 
 function draw(){
   particlesG.innerHTML="";
   copperG.innerHTML="";
+  liquid.style.display = state.value==="solution" ? "block" : "none";
+
   const n=slider.value;
   const cond=conducts();
 
   for(let i=0;i<n;i++){
-    const cx=70+Math.random()*60;
-    const cy=120+Math.random()*100;
+    const cx=150+Math.random()*100;
+    const cy=280+Math.random()*120;
     const p=document.createElementNS("http://www.w3.org/2000/svg","circle");
     p.setAttribute("cx",cx);
     p.setAttribute("cy",cy);
     p.setAttribute("r",5);
-    p.setAttribute("fill",cond?(i%2?"red":"blue"):"gray");
+
+    let color="gray";
+    if(cond){
+      if(substance.value==="acid") color=i%2?"red":"blue";
+      else color=i%2?"red":"blue";
+    }
+    p.setAttribute("fill",color);
 
     if(cond){
       const dir=i%2?1:-1;
       let x=cx;
       setInterval(()=>{
-        x+=dir*0.5;
+        x+=dir*0.4;
         p.setAttribute("cx",x);
       },50);
     }
     particlesG.appendChild(p);
   }
 
-  // 塩化銅：Cu析出
   if(cond && substance.value==="copper"){
-    for(let i=0;i<6;i++){
+    for(let i=0;i<8;i++){
       const cu=document.createElementNS("http://www.w3.org/2000/svg","circle");
-      cu.setAttribute("cx",140+Math.random()*8);
-      cu.setAttribute("cy",200+Math.random()*40);
+      cu.setAttribute("cx",250+Math.random()*10);
+      cu.setAttribute("cy",350+Math.random()*60);
       cu.setAttribute("r",4);
       cu.setAttribute("fill","#b87333");
       copperG.appendChild(cu);
@@ -209,14 +207,8 @@ slider.oninput=draw;
 substance.onchange=draw;
 state.onchange=draw;
 
-window.onhashchange=()=>{
-  mainPage.classList.toggle("hidden",location.hash==="#help");
-  helpPage.classList.toggle("hidden",location.hash!=="#help");
-};
-
 draw();
 </script>
 
 </body>
 </html>
-
