@@ -26,26 +26,29 @@ button, select, input {
   padding:6px;
 }
 
-.teacher {
-  font-size:13px;
-  background:#eee;
-}
-
 #powerBtn.on { background:#ffcccc; }
 #powerBtn.off { background:#ddd; }
 
 svg { max-width:360px; display:block; margin:auto; }
 
-/* 教材解説（下部・控えめ） */
+.footer {
+  margin-top:20px;
+  font-size:13px;
+  text-align:center;
+}
+
+.footer button {
+  font-size:13px;
+  padding:4px 8px;
+}
+
 #explanation {
   display:none;
   background:#ffffff;
   padding:10px;
-  margin-top:12px;
+  margin-top:10px;
   border-radius:6px;
-  font-size:14px;
-  line-height:1.5;
-  border-top:2px solid #ccc;
+  text-align:left;
 }
 </style>
 </head>
@@ -76,10 +79,6 @@ svg { max-width:360px; display:block; margin:auto; }
     粒子数
     <input type="range" id="particleSlider" min="0" max="20" value="10">
   </label>
-
-  <!-- 教師用操作 -->
-  <button class="teacher" onclick="toggleLabels()">電極表示切替</button>
-  <button class="teacher" onclick="toggleExplanation()">教材解説</button>
 </div>
 
 <!-- ===== 回路＋ビーカー ===== -->
@@ -90,7 +89,7 @@ svg { max-width:360px; display:block; margin:auto; }
 <line x1="65" y1="30" x2="65" y2="100" stroke="black" stroke-width="5"/>
 <text x="40" y="20">電池</text>
 
-<!-- 導線（電極に正確接続） -->
+<!-- 導線（直列・電極に正確接続） -->
 <path d="M65 65 H180" stroke="black" fill="none"/>
 <path d="M220 65 H350 V185 H260 V200" stroke="black" fill="none"/>
 <path d="M140 200 V185 H50 V65" stroke="black" fill="none"/>
@@ -110,7 +109,7 @@ svg { max-width:360px; display:block; margin:auto; }
 <circle cx="140" cy="200" r="3" fill="black"/>
 <circle cx="260" cy="200" r="3" fill="black"/>
 
-<!-- 電極ラベル（±がデフォルト） -->
+<!-- 電極ラベル（デフォルト＋−） -->
 <text id="labelLeft"  x="120" y="215" fill="red">＋</text>
 <text id="labelRight" x="280" y="215" fill="blue">−</text>
 
@@ -123,20 +122,25 @@ svg { max-width:360px; display:block; margin:auto; }
       d="M120 260 L280 260 L260 470 Q200 490 140 470 Z"
       fill="#ccecff" opacity="0.7"/>
 
-<!-- 表示要素 -->
+<!-- 粒子・析出・気泡 -->
 <g id="particles"></g>
 <g id="copperDeposit"></g>
 <g id="bubbles"></g>
 
 </svg>
 
-<!-- 教材解説（下部） -->
-<div id="explanation">
-<b>教材解説（教師用）</b><br>
-・水溶液では、物質が電気をもつ粒子（イオン）に分かれて動く。<br>
-・イオンが移動することで電流が流れ、豆電球が光る。<br>
-・電流が流れると、電極では気体の発生や金属の析出が起こる。<br>
-・粒子数が多いほど、電流は流れやすくなる。
+<!-- ===== ページ最下部 ===== -->
+<div class="footer">
+  <button onclick="toggleLabels()">電極表示切替（＋／− ↔ 陽極／陰極）</button>
+  <button onclick="toggleExplanation()">教材解説</button>
+
+  <div id="explanation">
+    <b>教材解説（教師用）</b><br>
+    ・水溶液では、物質が粒子（イオン）に分かれて動くことで電流が流れる。<br>
+    ・砂糖やエタノールは粒子に分かれないため、電流が流れない。<br>
+    ・粒子数が多いほど電流は流れやすく、豆電球は明るくなる。<br>
+    ・塩化銅では、陰極に金属銅が析出する。
+  </div>
 </div>
 
 <script>
@@ -151,7 +155,7 @@ const substance = document.getElementById("substance");
 const state = document.getElementById("state");
 
 let powerOn=false;
-let labelMode=0; // 0: ±, 1: 陽極陰極
+let labelMode=0;
 
 powerBtn.onclick=()=>{
   powerOn=!powerOn;
@@ -161,9 +165,8 @@ powerBtn.onclick=()=>{
 };
 
 function conducts(){
-  return powerOn &&
-    state.value==="solution" &&
-    ["salt","acid","base","copper"].includes(substance.value);
+  if(state.value!=="solution") return false;
+  return ["salt","acid","base","copper"].includes(substance.value) && powerOn;
 }
 
 function toggleLabels(){
@@ -201,7 +204,7 @@ function draw(){
     for(let i=0;i<5;i++){
       const b=document.createElementNS("http://www.w3.org/2000/svg","circle");
       b.setAttribute("cx",140+Math.random()*6);
-      b.setAttribute("cy",300+Math.random()*120);
+      b.setAttribute("cy",320+Math.random()*120);
       b.setAttribute("r",4);
       b.setAttribute("fill","none");
       b.setAttribute("stroke","#88ccff");
