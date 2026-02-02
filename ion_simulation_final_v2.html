@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水溶液と電流 模擬実験</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 10px;
+  background: #f5f5f5;
+}
+h2 { text-align:center; }
+
+button, select, input {
+  font-size: 16px;
+  padding: 6px;
+}
+
+.hidden { display:none; }
+
+.controls {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  margin-bottom:10px;
+}
+
+#powerBtn.on { background:#ffcccc; }
+#powerBtn.off { background:#ddd; }
+
+svg { max-width:320px; }
+
+#bulbGlass { fill:yellow; opacity:0.2; }
+
+.page {
+  max-width: 420px;
+  margin: auto;
+}
+
+.help {
+  background:white;
+  padding:15px;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== メイン教材ページ ===== -->
+<div id="mainPage" class="page">
+<h2>水溶液と電流</h2>
+
+<div class="controls">
+  <select id="substance">
+    <option value="sugar">砂糖</option>
+    <option value="salt">食塩</option>
+    <option value="copper">塩化銅</option>
+  </select>
+
+  <select id="state">
+    <option value="solid">固体</option>
+    <option value="solution">水溶液</option>
+  </select>
+
+  <button id="powerBtn" class="off">電流：OFF</button>
+
+  <label>
+    粒子数
+    <input type="range" id="particleSlider" min="0" max="20" value="10">
+  </label>
+
+  <button id="electrodeBtn">表示：＋ / −</button>
+</div>
+
+<!-- 豆電球 -->
+<svg width="100" viewBox="0 0 100 150">
+  <circle id="bulbGlass" cx="50" cy="50" r="35"/>
+  <line x1="40" y1="60" x2="60" y2="60"
+        stroke="orange" stroke-width="4"/>
+  <rect x="35" y="90" width="30" height="40" fill="#666"/>
+</svg>
+
+<!-- ビーカー -->
+<svg id="beaker" viewBox="0 0 200 300">
+  <!-- 電極ラベル -->
+  <text id="leftLabel"  x="40"  y="120" fill="red">＋</text>
+  <text id="rightLabel" x="150" y="120" fill="blue">−</text>
+
+  <path d="M40 20 L160 20 L150 260 Q100 280 50 260 Z"
+        fill="none" stroke="#333" stroke-width="4"/>
+
+  <path d="M50 100 L150 100 L140 250 Q100 265 60 250 Z"
+        fill="#ccecff" opacity="0.7"/>
+
+  <g id="particles"></g>
+  <g id="copperDeposit"></g>
+</svg>
+
+<button onclick="location.hash='help'">教材解説を見る</button>
+</div>
+
+<!-- ===== 解説ページ ===== -->
+<div id="helpPage" class="page hidden">
+<h2>教材解説（教員用）</h2>
+
+<div class="help">
+<ul>
+  <li>電極表示は「＋／−」と「陽極／陰極」を切り替え可能</li>
+  <li>中学では＋極・−極、高校では陽極・陰極として扱える</li>
+  <li>塩化銅水溶液では陰極でCuが析出する</li>
+</ul>
+</div>
+
+<button onclick="location.hash=''">戻る</button>
+</div>
+
+<script>
+const powerBtn = document.getElementById("powerBtn");
+const bulb = document.getElementById("bulbGlass");
+const particlesG = document.getElementById("particles");
+const copperG = document.getElementById("copperDeposit");
+const slider = document.getElementById("particleSlider");
+
+const leftLabel  = document.getElementById("leftLabel");
+const rightLabel = document.getElementById("rightLabel");
+const electrodeBtn = document.getElementById("electrodeBtn");
+
+let powerOn=false;
+let labelMode="pm"; // pm or anode
+
+powerBtn.onclick=()=>{
+  powerOn=!powerOn;
+  powerBtn.textContent=powerOn?"電流：ON":"電流：OFF";
+  powerBtn.className=powerOn?"on":"off";
+  draw();
+};
+
+electrodeBtn.onclick=()=>{
+  if(labelMode==="pm"){
+    labelMode="anode";
+    leftLabel.textContent="陽極";
+    rightLabel.textContent="陰極";
+    electrodeBtn.textContent="表示：陽極 / 陰極";
+  }else{
+    labelMode="pm";
+    leftLabel.textContent="＋";
+    rightLabel.textContent="−";
+    electrodeBtn.textContent="表示：＋ / −";
+  }
+};
+
+function conducts(){
+  return powerOn &&
+    state.value==="solution" &&
+    substance.value!=="sugar";
+}
+
+function updateBulb(){
+  const on=conducts();
+  bulb.style.opacity=on?(0.3+slider.value/20*0.6):0.2;
+}
+
+function draw(){
+  particlesG.innerHTML="";
+  copperG.innerHTML="";
+  const n=slider.value;
+  const cond=conducts();
+
+  for(let i=0;i<n;i++){
+    const cx=70+Math.random()*60;
+    const cy=120+Math.random()*100;
+    const p=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    p.setAttribute("cx",cx);
+    p.setAttribute("cy",cy);
+    p.setAttribute("r",5);
+    p.setAttribute("fill",cond?(i%2?"red":"blue"):"gray");
+
+    if(cond){
+      const dir=i%2?1:-1;
+      let x=cx;
+      setInterval(()=>{
+        x+=dir*0.5;
+        p.setAttribute("cx",x);
+      },50);
+    }
+    particlesG.appendChild(p);
+  }
+
+  // 塩化銅：Cu析出
+  if(cond && substance.value==="copper"){
+    for(let i=0;i<6;i++){
+      const cu=document.createElementNS("http://www.w3.org/2000/svg","circle");
+      cu.setAttribute("cx",140+Math.random()*8);
+      cu.setAttribute("cy",200+Math.random()*40);
+      cu.setAttribute("r",4);
+      cu.setAttribute("fill","#b87333");
+      copperG.appendChild(cu);
+    }
+  }
+
+  updateBulb();
+}
+
+slider.oninput=draw;
+substance.onchange=draw;
+state.onchange=draw;
+
+window.onhashchange=()=>{
+  mainPage.classList.toggle("hidden",location.hash==="#help");
+  helpPage.classList.toggle("hidden",location.hash!=="#help");
+};
+
+draw();
+</script>
+
+</body>
+</html>
