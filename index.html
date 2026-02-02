@@ -26,18 +26,26 @@ button, select, input {
   padding:6px;
 }
 
+.teacher {
+  font-size:13px;
+  background:#eee;
+}
+
 #powerBtn.on { background:#ffcccc; }
 #powerBtn.off { background:#ddd; }
 
 svg { max-width:360px; display:block; margin:auto; }
 
+/* 教材解説（下部・控えめ） */
 #explanation {
   display:none;
-  background:#fff;
+  background:#ffffff;
   padding:10px;
-  margin-top:10px;
+  margin-top:12px;
   border-radius:6px;
   font-size:14px;
+  line-height:1.5;
+  border-top:2px solid #ccc;
 }
 </style>
 </head>
@@ -69,8 +77,9 @@ svg { max-width:360px; display:block; margin:auto; }
     <input type="range" id="particleSlider" min="0" max="20" value="10">
   </label>
 
-  <button onclick="toggleLabels()">電極表示切替</button>
-  <button onclick="toggleExplanation()">教材解説</button>
+  <!-- 教師用操作 -->
+  <button class="teacher" onclick="toggleLabels()">電極表示切替</button>
+  <button class="teacher" onclick="toggleExplanation()">教材解説</button>
 </div>
 
 <!-- ===== 回路＋ビーカー ===== -->
@@ -81,26 +90,10 @@ svg { max-width:360px; display:block; margin:auto; }
 <line x1="65" y1="30" x2="65" y2="100" stroke="black" stroke-width="5"/>
 <text x="40" y="20">電池</text>
 
-<!-- 導線（直列・電極に正確に接続） -->
-<!-- 電池 → 豆電球 -->
+<!-- 導線（電極に正確接続） -->
 <path d="M65 65 H180" stroke="black" fill="none"/>
-
-<!-- 豆電球 → 右電極（上端に接続） -->
-<path d="
-M220 65
-H350
-V185
-H260
-V200
-" stroke="black" fill="none"/>
-
-<!-- 左電極 → 電池 -->
-<path d="
-M140 200
-V185
-H50
-V65
-" stroke="black" fill="none"/>
+<path d="M220 65 H350 V185 H260 V200" stroke="black" fill="none"/>
+<path d="M140 200 V185 H50 V65" stroke="black" fill="none"/>
 
 <!-- 豆電球 -->
 <circle id="bulbGlass" cx="200" cy="65" r="20"
@@ -113,11 +106,11 @@ V65
 <line x1="140" y1="200" x2="140" y2="300" stroke="black" stroke-width="4"/>
 <line x1="260" y1="200" x2="260" y2="300" stroke="black" stroke-width="4"/>
 
-<!-- 電極と導線の接続点（誤解防止） -->
+<!-- 接続点 -->
 <circle cx="140" cy="200" r="3" fill="black"/>
 <circle cx="260" cy="200" r="3" fill="black"/>
 
-<!-- 電極ラベル -->
+<!-- 電極ラベル（±がデフォルト） -->
 <text id="labelLeft"  x="120" y="215" fill="red">＋</text>
 <text id="labelRight" x="280" y="215" fill="blue">−</text>
 
@@ -130,19 +123,20 @@ V65
       d="M120 260 L280 260 L260 470 Q200 490 140 470 Z"
       fill="#ccecff" opacity="0.7"/>
 
-<!-- 粒子・析出・気泡 -->
+<!-- 表示要素 -->
 <g id="particles"></g>
 <g id="copperDeposit"></g>
 <g id="bubbles"></g>
 
 </svg>
 
+<!-- 教材解説（下部） -->
 <div id="explanation">
-<b>教材解説</b><br>
-・水溶液では、物質が粒子（イオン）に分かれて動くことで電流が流れる。<br>
-・砂糖やエタノールは粒子に分かれないため、電気を通さない。<br>
+<b>教材解説（教師用）</b><br>
+・水溶液では、物質が電気をもつ粒子（イオン）に分かれて動く。<br>
+・イオンが移動することで電流が流れ、豆電球が光る。<br>
 ・電流が流れると、電極では気体の発生や金属の析出が起こる。<br>
-・粒子数が多いほど、電流が流れやすくなり、豆電球は明るくなる。
+・粒子数が多いほど、電流は流れやすくなる。
 </div>
 
 <script>
@@ -157,7 +151,7 @@ const substance = document.getElementById("substance");
 const state = document.getElementById("state");
 
 let powerOn=false;
-let labelMode=0;
+let labelMode=0; // 0: ±, 1: 陽極陰極
 
 powerBtn.onclick=()=>{
   powerOn=!powerOn;
@@ -167,8 +161,9 @@ powerBtn.onclick=()=>{
 };
 
 function conducts(){
-  if(state.value!=="solution") return false;
-  return ["salt","acid","base","copper"].includes(substance.value) && powerOn;
+  return powerOn &&
+    state.value==="solution" &&
+    ["salt","acid","base","copper"].includes(substance.value);
 }
 
 function toggleLabels(){
